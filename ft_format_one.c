@@ -1,19 +1,50 @@
 #include <stdarg.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include "libft.h"
 #include "t_fspec.h"
 #include "printf_utils.h"
 #include "ft_hexstr.h"
 #include "ft_format_one.h"
+#include "definitions.h"
 
-#include <stdio.h>
-
-/* sarg : pieces to build a string out of an argument */
+/*a : pieces to build a string out of an argument
+ * u prefix means not necessarily terminated (unterminated)
+ * (hence the need for a len)
+ * this is so we can output '\0' without too much
+ * trouble and to avoid some unnecessary copying 
+ */
 typedef struct
 {
-	char	*base;
+	char	*ubasic;
+	size_t	base_len;
 	char	*prefix;
+	char	*upad;
+	size_t	pad_len;
 }	t_sarg;
+
+/* if terminated len is ignored and strlen is used instead */
+void	ft_set_basic(t_sarg *a, char *ubasic, int terminated, size_t len)
+{
+	a->ubasic = ubasic;
+	if (terminated)
+		a->base_len = ft_strlen(ubasic);
+	else 
+		a->base_len = len;
+}
+
+
+/* wrapper around strdup that handles the case 
+ * where s is NULL */
+static void	ft_strdup_wrapper(t_sarg *a, char const *s)
+{
+	ft_set_basic(a, ft_strdup(s), 1, 0);
+	if (!a->ubasic)
+	{
+		a->prefix = "(null)";
+		ft_set_basic(a, malloc(0), 0, 0);
+	}
+}
 
 /* consume 1 arg and convert it to a t_sarg 
  * ignoring flags.
@@ -23,161 +54,158 @@ typedef struct
  * num_arg is useful for the d/i case where the conversion is
  * a bit tricky due to signedness.
  * 
- * errors are indicated by sarg->base being NULL upon exit */
-static void	ft_set_sarg(t_sarg *sarg, char spec, va_list args)
+ * errors are indicated bya->base being NULL upon exit */
+#include <stdio.h>
+static void	ft_basic_ofarg(t_sarg *a, char spec, va_list args)
 {
 	int	num_arg;
 
-	sarg->prefix = "";
-	sarg->base = NULL;
 	if (spec == 'd' || spec == 'i')
 	{
 		num_arg = va_arg(args, int);
 		if (num_arg < 0)
-			sarg->prefix = "-";
-		sarg->base = ft_itoa(ft_abs(num_arg));
+			a->prefix = "-";
+		ft_set_basic(a, ft_uitoa(ft_abs(num_arg)), 1, 0);
 	}
-	else if (spec == 's')
-		sarg->base = ft_strdup(va_arg(args, char *));
+	else if (spec == 'u')
+		ft_set_basic(a, ft_uitoa(va_arg(args, t_uint)), 1, 0);
 	else if (spec == 'x')
-		sarg->base = ft_hexstr(va_arg(args, t_uint));
+		ft_set_basic(a, ft_hexstr(va_arg(args, t_uint)), 1, 0);
 	else if (spec == 'X')
-		sarg->base = ft_heXstr(va_arg(args, t_uint));
+		ft_set_basic(a, ft_heXstr(va_arg(args, t_uint)), 1, 0);
 	else if (spec == 'p')
-	{
-		sarg->prefix = "0x";
-		sarg->base = ft_hexstr((size_t) va_arg(args, void *));
-	}
+		ft_set_basic(a, ft_hexstr((size_t) va_arg(args, void *)), 1, 0);
 	else if (spec == 'c')
-		sarg->base = ft_strofc(va_arg(args, int));
-	printf("set : %p\n", sarg->base);
+		ft_set_basic(a, ft_challoc(va_arg(args, int)), 0, 1);
+	else if (spec == 's')
+		ft_strdup_wrapper(a, va_arg(args, char *));
 }
 
-/* set sarg->base to a new str taking the precision into account
- * frees the previous base (which is always alloced)
- * return 0 upon success
- * -1 upon error */
-static int	ft_handle_precision(t_sarg *sarg, t_uint p, char spec)	
+/* set a->base to a new str taking the precision into account
+ * if something wrong happensa->ubasic will always be NULL */
+static void	ft_handle_precision(t_sarg *a, t_uint p, char spec)	
 {
 	char	*new_base;
-	size_t 	len;
 
-	if (!ft_is_in("sdixX", spec) || !sarg || !sarg->base)
-		return (0);
-	len = ft_strlen(sarg->base);
-	new_base = sarg->base;
+	if (!a->ubasic || !ft_is_in("s" NUMERIC, spec))
+		return ;
 	if (spec == 's')
-		new_base = ft_substr(sarg->base, 0, p);
-	else if (p > len || (!ft_strncmp("0", sarg->base, 2) && p == 0))
+	{
+		new_base = ft_substr(a->ubasic, 0, p);
+		free(a->ubasic);
+		ft_set_basic(a, new_base, 1, 0);
+		return ;
+	}
+	if (!ft_strncmp(a->ubasic, "0", 2) && p == 0)
+		a->base_len = 0;
+	else if (p > a->base_len)
+	{
 		new_base = malloc(sizeof(char) * (p + 1));
-	if (!new_base)
-		return (-1);
-	ft_memset(new_base, '0', p);
-	if (p > len)
-		ft_strlcpy(new_base + (p - len), sarg->base, len + 1); //indices ok?
-	else if (!ft_strncmp("0", sarg->base, 2) && p == 0)
-		*new_base = '\0';
-	if (new_base == sarg->base)
-		return (0);
-	free(sarg->base);
-	sarg->base = new_base;
-	return (0);
+		if (new_base)
+		{
+			ft_memset(new_base, '0', p);
+			ft_strlcpy(new_base + p - a->base_len, a->ubasic, p - a->base_len);
+		}
+		free(a->ubasic);
+		ft_set_basic(a, new_base, 1, p);
+	}
 }
 
-/* combine a into a the final string to be output (returned)
- * taking width into consideration 
- * return (NULL) upon failure */
-static char	*ft_handle_width(t_sarg const *a, t_fspec const *f)
+static void	ft_set_prefix(t_sarg *a, t_fspec *f)
 {
-	char		*ret;
-	char		*pad;
-	ptrdiff_t	pad_len;
-
-	printf("bah: %d\n", f->width);
-	pad_len = f->width - ft_strlen(a->prefix) - ft_strlen(a->base);
-	printf("wpbr: %u %ld %ld %ld\n", f->width, ft_strlen(a->prefix), ft_strlen(a->base),  pad_len);
-	if (pad_len <= 0)
-		return (ft_strjoin(a->prefix, a->base));
-	pad = malloc(sizeof(char) * (pad_len + 1));
-	if (!pad)
-		return (NULL);
-	ft_memset(pad, ' ', pad_len);
-	pad[pad_len] = '\0';
-	if (ft_is_in(f->flags, '-'))
-		ret = ft_join3(a->prefix, a->base, pad);
-	else if (ft_is_in(f->flags, '0') && !ft_is_in(f->flags, '.')
-			&& ft_is_in("idxX", f->spec))
-	{
-		ft_memset(pad, '0', pad_len);
-		ret = ft_join3(a->prefix, pad, a->base);
-	}
-	else 
-		ret = ft_join3(pad, a->prefix, a->base);
-	free(pad);
-	printf("bibouh\n");
-	return (ret);
-}
-
-/* take pointers to a properly initialized t_sarg and t_fspec, 
- * and what follows a % in a format string (1)
- * and returns the string to be output by ft_format_one 
- *
- * (1) this is needed when an invalid specifier is given 
- */
-static char	*ft_prep_output(t_sarg *a, t_fspec *f, char const *s)
-{
-	if (!ft_is_in(SPECIFIERS, f->spec))
-	{
-		a->prefix = "%";
-		a->base = ft_substr(s, 0, f->slen);
-	}
-	if (ft_is_in(f->flags, '.'))
-	   ft_handle_precision(a, f->precision, f->spec);
-	if (!a->base)
-		return (NULL);
-	if ((f->spec == 'i' || f->spec == 'd') && ft_strncmp(a->prefix, "-", 2))
+	if (f->spec == 'p' || (ft_is_in(f->flags, '#') && f->spec == 'x'))
+		a->prefix = "0x";
+	else if ((ft_is_in(f->flags, '#') && f->spec == 'X'))
+		a->prefix = "0X";
+	else if (ft_is_in("di", f->spec) && ft_strncmp(a->prefix, "-", 2))
 	{
 		if (ft_is_in(f->flags, '+'))
 			a->prefix = "+";
 		else if (ft_is_in(f->flags, ' '))
 			a->prefix = " ";
 	}
-	if (f->spec == 'x' && ft_is_in(f->flags, '#'))
-		a->prefix = "0x";
-	if (f->spec == 'X' && ft_is_in(f->flags, '#'))
-		a->prefix = "0X";
-	printf("po : before exit \n");
-	return (ft_handle_width(a, f));
 }
-	
+
+/* set the padding to be printed
+ * return -1 when malloc error
+ * 0 otherwise */
+static int	ft_set_pad(t_sarg *a, t_fspec *f)
+{
+	char		*pad;
+	ptrdiff_t	pad_len;
+
+	pad_len = f->width - ft_strlen(a->prefix) - a->base_len;
+	if (pad_len <= 0)
+	{
+		a->upad = malloc(0);
+		a->pad_len = 0;
+		return (0);
+	}
+	pad = malloc(sizeof(char) * pad_len);
+	if (!pad)
+		return (-1);
+	if (ft_is_in(NUMERIC, f->spec) && ft_is_in(f->flags, '0')
+		&& !ft_is_in(f->flags, '.') && !ft_is_in(f->flags, '-'))
+		ft_memset(pad, '0', pad_len);
+	else
+		ft_memset(pad, ' ', pad_len);
+	a->upad = pad;
+	a->pad_len = (size_t) pad_len;
+	return (0);
+}
+
+static void	ft_consume_sarg(t_sarg *a, t_fspec *f)
+{
+	if (ft_is_in(f->flags, '-'))
+	{
+		ft_putstr_fd(a->prefix, 1);
+		write(1, a->ubasic, a->base_len);
+		write(1, a->upad, a->pad_len);
+	}
+	else if (ft_is_in(f->flags, '0') && ft_is_in(NUMERIC, f->spec))
+	{
+		ft_putstr_fd(a->prefix, 1);
+		write(1, a->upad, a->pad_len);
+		write(1, a->ubasic, a->base_len);
+	}
+	else 
+	{
+		write(1, a->upad, a->pad_len);
+		ft_putstr_fd(a->prefix, 1);
+		write(1, a->ubasic, a->base_len);
+	}
+	free(a->upad);
+	free(a->ubasic);
+	return ;
+}
+		
 /* prints 1 arg (or %), and return len of output string 
  * if pb do nothing and return -1 */
-int	ft_format_one(char const *s, va_list va)
+int	ft_format_one(char const *s, char *spec, va_list va)
 {
-	char 	*out;
 	t_fspec	f;
 	t_sarg	a;
-	int 	ret;
 
-	if (*s == '%')
+	a.prefix = "";
+	if (*s && *s == '%')
 	{
-		ft_putchar_fd(1, '%');
+		write(1, "%", 1);
+		*spec = '%';
 		return (1);
 	}
 	ft_parse_spec(s, &f);
-	ft_set_sarg(&a, f.spec, va);
-	printf("fo : thingies set\n");
-	if (!a.base)
+	if (!ft_is_in(SPECIFIERS, f.spec))
 		return (-1);
-	out = ft_prep_output(&a, &f, s);
-	printf("fo : out set\n");
-	ft_putstr_fd(out, 1);
-	printf("%s %p\n", a.base, a.base);
-	free(a.base);
-	printf("2\n");
-	if (!out)
+	ft_basic_ofarg(&a, f.spec, va);
+	if (ft_is_in(f.flags, '.'))
+		ft_handle_precision(&a, f.precision, f.spec);
+	if (!a.ubasic)
 		return (-1);
-	ret = ft_strlen(out);
-	free(out);
-	return (ret);
+	ft_set_prefix(&a, &f);
+	//printf("prefix set: it is %s\n", a.prefix);
+	if (ft_set_pad(&a, &f) == -1)
+		return (-1);
+	ft_consume_sarg(&a, &f);
+	*spec = f.spec;
+	return (ft_strlen(a.prefix) + a.base_len + a.pad_len);
 }

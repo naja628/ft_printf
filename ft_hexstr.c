@@ -29,7 +29,7 @@ char	*ft_hexstr(size_t n)
 	if (!s)
 		return (NULL);
 	ft_hexstr_helper(s + sz - 1, n);
-	s[sz] = 1;
+	s[sz] = '\0';
 	return (s);
 }
 
@@ -40,7 +40,7 @@ static void	ft_heXstr_helper(char *units_place, size_t n)
 	digits = "0123456789ABCDEF";
 	*units_place = digits[n % 16];
 	if (n >= 16)
-		ft_hexstr_helper(units_place - 1, n / 16);
+		ft_heXstr_helper(units_place - 1, n / 16);
 }
 
 
@@ -53,7 +53,8 @@ char	*ft_heXstr(size_t n)
 	s = malloc(sizeof(char) * (1 + sz));
 	if (!s)
 		return (NULL);
-	ft_heXstr_helper(s + sz, n);
+	ft_heXstr_helper(s + sz - 1, n);
+	s[sz] = '\0';
 	return (s);
 }
 
@@ -68,7 +69,7 @@ int main(int ac, char **av)
 	size_t putme;
 	char *out;
 	putme = atoi(av[1]);
-	out = ft_hex_to_str(putme);
+	out = ft_hexstr(putme);
 	printf("%s\n", out);
 	free (out);
 	return (0);

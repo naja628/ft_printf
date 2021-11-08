@@ -2,7 +2,7 @@
 # define T_FSPEC_H
 
 # include <stddef.h>
-# include "constants.h"
+# include "definitions.h"
 
 /* fspec : format specifier
  * spec is the specifier character (i, d etc)
@@ -10,11 +10,10 @@
  * negative width means width means unspecified */
 typedef struct
 {
-	char	flags[NFLAGS + 1];
-	int		width; // TODO change type to smth else
-	t_uint	precision;
-	char	spec;
-	size_t	slen;
+	char		flags[NFLAGS + 1];
+	ptrdiff_t	width;
+	t_uint		precision;
+	char		spec;
 }	t_fspec;
 
 /* take what comes after a % in a format string 

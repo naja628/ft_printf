@@ -2,15 +2,7 @@
 
 int main()
 {
-	printf("%3%\n");
-	printf("%c\n", -1);
-	printf("%#trtrtrtrtrtrtrd\n");
-	printf("%03s\n", "boooooo");
-	printf("%#.3c\n", 'a');
-	printf("%05d\n", -19);
-	printf("%.5d\n", -19);
-	printf("%#5x\n", 19);
-	printf("%#.5x\n", 19);
+	printf("%04d", -3);
 	return (0);
 }
 
