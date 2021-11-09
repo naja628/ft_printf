@@ -8,7 +8,7 @@ void	ft_set_basic(t_sarg *a, char *ubasic, int terminated, size_t len)
 	a->ubasic = ubasic;
 	if (terminated)
 		a->base_len = ft_strlen(ubasic);
-	else 
+	else
 		a->base_len = len;
 }
 

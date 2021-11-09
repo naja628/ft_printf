@@ -12,7 +12,7 @@ int	ft_is_in(char const *set, char c)
 	return (0);
 }
 
-t_uint ft_abs(int n)
+t_uint	ft_abs(int n)
 {
 	if (n < 0)
 		return (-n);
@@ -25,7 +25,7 @@ char	*ft_challoc(char c)
 	char	*out;
 
 	out = malloc(sizeof(char));
-	if (!out) 
+	if (!out)
 		return (NULL);
 	*out = c;
 	return (out);

@@ -8,7 +8,7 @@
  * spec is the specifier character (i, d etc)
  * slen is the len of the format specifier (% excluded)
  * negative width means width means unspecified */
-typedef struct
+typedef struct s_fspec
 {
 	char		flags[NFLAGS + 1];
 	ptrdiff_t	width;

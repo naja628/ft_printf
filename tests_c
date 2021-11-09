@@ -1,8 +1,0 @@
-#include <stdio.h>
-
-int main()
-{
-	printf("%04d", -3);
-	return (0);
-}
-

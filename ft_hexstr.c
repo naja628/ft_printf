@@ -40,7 +40,7 @@ static void	ft_bighexstr_helper(char *units_place, size_t n)
 	digits = "0123456789ABCDEF";
 	*units_place = digits[n % 16];
 	if (n >= 16)
-		ft_heXstr_helper(units_place - 1, n / 16);
+		ft_bighexstr_helper(units_place - 1, n / 16);
 }
 
 char	*ft_bighexstr(size_t n)

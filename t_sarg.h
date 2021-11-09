@@ -8,7 +8,7 @@
  * this is so we can output '\0' without too much
  * trouble and to avoid some unnecessary copying 
  */
-typedef struct
+typedef struct s_sarg
 {
 	char	*ubasic;
 	size_t	base_len;

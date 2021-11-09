@@ -14,17 +14,15 @@
  * note this function assumes a->ubasic is terminated
  * which will always be true in our be sorta goes against 
  * the spirit of how we set it up (maybe refactor) */
-static void	ft_handle_precision(t_sarg *a, t_uint p, char spec)	
+static void	ft_handle_precision(t_sarg *a, t_uint p, char spec)
 {
 	char	*new_base;
 
-	//printf("preci : bouh \n");
 	if (!a->ubasic || !ft_is_in("s" NUMERIC, spec))
 		return ;
 	if (spec == 's')
 	{
 		new_base = ft_substr(a->ubasic, 0, p);
-		//printf("preci : str cut to %s\n", new_base);
 		free(a->ubasic);
 		ft_set_basic(a, new_base, 1, 0);
 		return ;
@@ -101,7 +99,7 @@ static void	ft_consume_sarg(t_sarg *a, t_fspec *f)
 		write(1, a->upad, a->pad_len);
 		write(1, a->ubasic, a->base_len);
 	}
-	else 
+	else
 	{
 		write(1, a->upad, a->pad_len);
 		ft_putstr_fd(a->prefix, 1);
@@ -111,7 +109,7 @@ static void	ft_consume_sarg(t_sarg *a, t_fspec *f)
 	free(a->ubasic);
 	return ;
 }
-		
+
 /* prints 1 arg (or %), and return len of output string 
  * if pb do nothing and return -1 */
 int	ft_format_one(char const *s, char *spec, va_list va)
@@ -127,20 +125,16 @@ int	ft_format_one(char const *s, char *spec, va_list va)
 		return (1);
 	}
 	ft_parse_spec(s, &f);
-	//printf("spec parse, spec is : %c\n", f.spec);
 	if (!ft_is_in(SPECIFIERS, f.spec))
 		return (-1);
 	ft_basic_ofarg(&a, f.spec, va);
-	//printf("basic got : it is %s\n", a.ubasic);
 	if (ft_is_in(f.flags, '.'))
 		ft_handle_precision(&a, f.precision, f.spec);
 	if (!a.ubasic)
 		return (-1);
 	ft_set_prefix(&a, &f);
-	//printf("prefix set: it is %s\n", a.prefix);
 	if (ft_set_pad(&a, &f) == -1)
 		return (-1);
-	//printf("pad set it is %s\n", a.upad);
 	ft_consume_sarg(&a, &f);
 	*spec = f.spec;
 	return (ft_strlen(a.prefix) + a.base_len + a.pad_len);
