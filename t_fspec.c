@@ -18,7 +18,7 @@ void	ft_parse_spec(char const *s, t_fspec *f)
 		f->width = ft_atoi(s);
 	while (*s && ft_isdigit(*s))
 		++s;
-	if (*s == '.' && ft_isdigit(s[1]))
+	if (*s == '.')
 	{
 		f->flags[i++] = '.';
 		f->precision = ft_atoi(++s);

@@ -33,7 +33,7 @@ char	*ft_hexstr(size_t n)
 	return (s);
 }
 
-static void	ft_heXstr_helper(char *units_place, size_t n)
+static void	ft_bighexstr_helper(char *units_place, size_t n)
 {
 	char	*digits;
 
@@ -43,8 +43,7 @@ static void	ft_heXstr_helper(char *units_place, size_t n)
 		ft_heXstr_helper(units_place - 1, n / 16);
 }
 
-
-char	*ft_heXstr(size_t n)
+char	*ft_bighexstr(size_t n)
 {
 	char	*s;
 	size_t	sz;
@@ -53,26 +52,7 @@ char	*ft_heXstr(size_t n)
 	s = malloc(sizeof(char) * (1 + sz));
 	if (!s)
 		return (NULL);
-	ft_heXstr_helper(s + sz - 1, n);
+	ft_bighexstr_helper(s + sz - 1, n);
 	s[sz] = '\0';
 	return (s);
 }
-
-#ifdef TEST
-# include <stdlib.h>
-# include <stdio.h>
-
-int main(int ac, char **av)
-{
-	if (ac != 2)
-		exit (-1);
-	size_t putme;
-	char *out;
-	putme = atoi(av[1]);
-	out = ft_hexstr(putme);
-	printf("%s\n", out);
-	free (out);
-	return (0);
-}
-
-#endif

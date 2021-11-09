@@ -7,91 +7,24 @@
 #include "ft_hexstr.h"
 #include "ft_format_one.h"
 #include "definitions.h"
-
-/*a : pieces to build a string out of an argument
- * u prefix means not necessarily terminated (unterminated)
- * (hence the need for a len)
- * this is so we can output '\0' without too much
- * trouble and to avoid some unnecessary copying 
- */
-typedef struct
-{
-	char	*ubasic;
-	size_t	base_len;
-	char	*prefix;
-	char	*upad;
-	size_t	pad_len;
-}	t_sarg;
-
-/* if terminated len is ignored and strlen is used instead */
-void	ft_set_basic(t_sarg *a, char *ubasic, int terminated, size_t len)
-{
-	a->ubasic = ubasic;
-	if (terminated)
-		a->base_len = ft_strlen(ubasic);
-	else 
-		a->base_len = len;
-}
-
-
-/* wrapper around strdup that handles the case 
- * where s is NULL */
-static void	ft_strdup_wrapper(t_sarg *a, char const *s)
-{
-	ft_set_basic(a, ft_strdup(s), 1, 0);
-	if (!a->ubasic)
-	{
-		a->prefix = "(null)";
-		ft_set_basic(a, malloc(0), 0, 0);
-	}
-}
-
-/* consume 1 arg and convert it to a t_sarg 
- * ignoring flags.
- *
- * % is handled elsewhere (as it doesn't consume an arg).
- * 
- * num_arg is useful for the d/i case where the conversion is
- * a bit tricky due to signedness.
- * 
- * errors are indicated bya->base being NULL upon exit */
-#include <stdio.h>
-static void	ft_basic_ofarg(t_sarg *a, char spec, va_list args)
-{
-	int	num_arg;
-
-	if (spec == 'd' || spec == 'i')
-	{
-		num_arg = va_arg(args, int);
-		if (num_arg < 0)
-			a->prefix = "-";
-		ft_set_basic(a, ft_uitoa(ft_abs(num_arg)), 1, 0);
-	}
-	else if (spec == 'u')
-		ft_set_basic(a, ft_uitoa(va_arg(args, t_uint)), 1, 0);
-	else if (spec == 'x')
-		ft_set_basic(a, ft_hexstr(va_arg(args, t_uint)), 1, 0);
-	else if (spec == 'X')
-		ft_set_basic(a, ft_heXstr(va_arg(args, t_uint)), 1, 0);
-	else if (spec == 'p')
-		ft_set_basic(a, ft_hexstr((size_t) va_arg(args, void *)), 1, 0);
-	else if (spec == 'c')
-		ft_set_basic(a, ft_challoc(va_arg(args, int)), 0, 1);
-	else if (spec == 's')
-		ft_strdup_wrapper(a, va_arg(args, char *));
-}
+#include "t_sarg.h"
 
 /* set a->base to a new str taking the precision into account
- * if something wrong happensa->ubasic will always be NULL */
+ * if something wrong happensa->ubasic will always be NULL 
+ * note this function assumes a->ubasic is terminated
+ * which will always be true in our be sorta goes against 
+ * the spirit of how we set it up (maybe refactor) */
 static void	ft_handle_precision(t_sarg *a, t_uint p, char spec)	
 {
 	char	*new_base;
 
+	//printf("preci : bouh \n");
 	if (!a->ubasic || !ft_is_in("s" NUMERIC, spec))
 		return ;
 	if (spec == 's')
 	{
 		new_base = ft_substr(a->ubasic, 0, p);
+		//printf("preci : str cut to %s\n", new_base);
 		free(a->ubasic);
 		ft_set_basic(a, new_base, 1, 0);
 		return ;
@@ -104,10 +37,10 @@ static void	ft_handle_precision(t_sarg *a, t_uint p, char spec)
 		if (new_base)
 		{
 			ft_memset(new_base, '0', p);
-			ft_strlcpy(new_base + p - a->base_len, a->ubasic, p - a->base_len);
+			ft_strlcpy(new_base + p - a->base_len, a->ubasic, a->base_len + 1);
 		}
 		free(a->ubasic);
-		ft_set_basic(a, new_base, 1, p);
+		ft_set_basic(a, new_base, 0, p);
 	}
 }
 
@@ -194,9 +127,11 @@ int	ft_format_one(char const *s, char *spec, va_list va)
 		return (1);
 	}
 	ft_parse_spec(s, &f);
+	//printf("spec parse, spec is : %c\n", f.spec);
 	if (!ft_is_in(SPECIFIERS, f.spec))
 		return (-1);
 	ft_basic_ofarg(&a, f.spec, va);
+	//printf("basic got : it is %s\n", a.ubasic);
 	if (ft_is_in(f.flags, '.'))
 		ft_handle_precision(&a, f.precision, f.spec);
 	if (!a.ubasic)
@@ -205,6 +140,7 @@ int	ft_format_one(char const *s, char *spec, va_list va)
 	//printf("prefix set: it is %s\n", a.prefix);
 	if (ft_set_pad(&a, &f) == -1)
 		return (-1);
+	//printf("pad set it is %s\n", a.upad);
 	ft_consume_sarg(&a, &f);
 	*spec = f.spec;
 	return (ft_strlen(a.prefix) + a.base_len + a.pad_len);

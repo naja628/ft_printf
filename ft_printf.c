@@ -23,7 +23,7 @@ static int	ft_printf_helper(char const *s, va_list va)
 		return (i);
 	s += i + 1;
 	j = ft_format_one(s, &spec, va);
-	//printf("\nremains to be printed : %s j is %d\n", s, j);
+	//printf("formatted str len : %d\n", j);
 	if (j == -1)
 		return (-1);
 	i += j;
