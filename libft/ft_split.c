@@ -6,13 +6,12 @@
 /*   By: najacque <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/12 19:23:47 by najacque          #+#    #+#             */
-/*   Updated: 2021/10/12 20:31:29 by najacque         ###   ########.fr       */
+/*   Updated: 2021/10/16 14:19:31 by najacque         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdlib.h>
 #include "libft.h"
-
 
 typedef unsigned int	t_uint;
 
@@ -35,7 +34,7 @@ static size_t	ft_nwords(char const *s, char c)
 
 static char	*ft_stream_create_word(char const **stream, char c)
 {
-	t_uint	i;
+	size_t	i;
 	char	*word;
 
 	while (**stream && **stream == c)
@@ -73,6 +72,8 @@ char	**ft_split(char const *s, char c)
 	size_t	nwords;
 	t_uint	i;
 
+	if (s == NULL)
+		return (NULL);
 	nwords = ft_nwords(s, c);
 	tab = malloc(sizeof(char *) * (nwords + 1));
 	if (!tab)

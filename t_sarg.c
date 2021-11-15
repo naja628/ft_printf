@@ -1,6 +1,19 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   t_sarg.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: najacque <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2021/11/15 17:08:44 by najacque          #+#    #+#             */
+/*   Updated: 2021/11/15 17:08:44 by najacque         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "libft.h"
 #include "printf_utils.h"
 #include "t_sarg.h"
+#include "ft_hexstr.h"
 
 /* if terminated len is ignored and strlen is used instead */
 void	ft_set_basic(t_sarg *a, char *ubasic, int terminated, size_t len)
@@ -19,12 +32,10 @@ void	ft_set_basic(t_sarg *a, char *ubasic, int terminated, size_t len)
  * (ideally this should be refactored) */
 static void	ft_strdup_wrapper(t_sarg *a, char const *s)
 {
-	ft_set_basic(a, ft_strdup(s), 1, 0);
-	if (!a->ubasic)
-	{
-		a->prefix = "(null)";
-		ft_set_basic(a, ft_challoc('\0'), 1, 0);
-	}
+	if (!s)
+		ft_set_basic(a, ft_strdup("(null)"), 1, 0);
+	else
+		ft_set_basic(a, ft_strdup(s), 1, 0);
 }
 
 /* consume 1 arg and convert it to a t_sarg 

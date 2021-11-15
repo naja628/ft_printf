@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ft_format_one.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: najacque <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2021/11/15 17:08:23 by najacque          #+#    #+#             */
+/*   Updated: 2021/11/15 17:18:17 by najacque         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <stdarg.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -44,9 +56,12 @@ static void	ft_handle_precision(t_sarg *a, t_uint p, char spec)
 
 static void	ft_set_prefix(t_sarg *a, t_fspec *f)
 {
-	if (f->spec == 'p' || (ft_is_in(f->flags, '#') && f->spec == 'x'))
+	if (f->spec == 'p'
+		|| (ft_is_in(f->flags, '#')
+			&& f->spec == 'x' && ft_strncmp("0", a->ubasic, 2)))
 		a->prefix = "0x";
-	else if ((ft_is_in(f->flags, '#') && f->spec == 'X'))
+	else if (ft_is_in(f->flags, '#')
+		&& f->spec == 'X' && ft_strncmp("0", a->ubasic, 2))
 		a->prefix = "0X";
 	else if (ft_is_in("di", f->spec) && ft_strncmp(a->prefix, "-", 2))
 	{
